@@ -15,6 +15,10 @@ Pick a question set, click **Evaluate**, and get clear, probability-backed answe
 
 </div>
 
+<p align="center">
+  <img src="src/images/screenshot.jpg" alt="Jev Check side panel evaluating a job posting with the Tech job template: fit, seniority, red flags and the stack the posting uses" width="900" />
+</p>
+
 > **Jev Check is an independent project. It is not an official TypeSafe product.**
 
 ---
