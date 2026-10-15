@@ -23,7 +23,7 @@ export default defineManifest({
       "64": "images/icon-64.png",
       "128": "images/icon-128.png"
     },
-    "default_title": "Show page as Markdown"
+    "default_title": "Evaluate this page content using Jev Check"
   },
   "side_panel": {
     "default_path": "sidebar/index.html"
