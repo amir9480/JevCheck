@@ -6,7 +6,14 @@ import {
   requestSiteAccess,
   type PageMarkdown
 } from '@/lib/extract-page'
-import {selectionKey, selectionToMarkdown, type RawSelection} from '@/lib/selection'
+import {
+  isSelectionMessage,
+  readSelection,
+  selectionKey,
+  selectionToMarkdown,
+  watchTabSelection,
+  type RawSelection
+} from '@/lib/selection'
 import {useLiveQuery} from 'dexie-react-hooks'
 import {db, hasAcceptedConsent, requestPersistentStorage} from '@/lib/db'
 import {
@@ -73,16 +80,48 @@ export default function SidebarApp() {
   const [pendingRun, setPendingRun] = useState<{setId: number; at: number} | null>(null)
   const stateRef = useRef(state)
   stateRef.current = state
-  // Bumped whenever a context-menu selection arrives, so a page read that started earlier cannot overwrite it.
+  // Bumped whenever a selection is shown, so a page read that started earlier cannot overwrite it.
   const selectionVersion = useRef(0)
 
   useEffect(requestPersistentStorage, [])
 
-  /** `silent` re-reads the same page without dropping the UI into the loading state. */
+  const showSelection = useCallback((raw: RawSelection) => {
+    selectionVersion.current++
+    setState({
+      status: 'ready',
+      page: selectionToMarkdown(raw),
+      source: `selection:${raw.at}`,
+      isSelection: true
+    })
+    // Only a fresh menu click runs a set; a stale selection found on reopening must not.
+    if (raw.runSetId !== undefined && Date.now() - raw.at < AUTO_RUN_MAX_AGE_MS) {
+      void setActiveSetId(raw.runSetId)
+      setPendingRun({setId: raw.runSetId, at: raw.at})
+    }
+  }, [])
+
+  /** Shows text selected on the page; the same selection shown again keeps its result. */
+  const showLiveSelection = useCallback(async (text: string) => {
+    const version = selectionVersion.current
+    const raw = await readSelection(TAB_ID, text)
+    if (!raw || version !== selectionVersion.current) return false
+    const current = stateRef.current
+    const page = selectionToMarkdown(raw)
+    if (current.status === 'ready' && current.isSelection && current.page.markdown === page.markdown) return true
+    showSelection(raw)
+    return true
+  }, [showSelection])
+
+  /**
+   * Reads the tab: its current selection if there is one, otherwise the whole page. Also (re)installs
+   * the page's selection watcher. `silent` re-reads without dropping the UI into the loading state.
+   */
   const load = useCallback(async (silent = false) => {
     const version = selectionVersion.current
     if (!silent) setState({status: 'loading'})
     try {
+      const selected = await watchTabSelection(TAB_ID)
+      if (selected && (await showLiveSelection(selected))) return
       const page = await extractPage(TAB_ID)
       if (version === selectionVersion.current) setState({status: 'ready', page, source: 'page'})
     } catch (error) {
@@ -96,23 +135,10 @@ export default function SidebarApp() {
         message: error instanceof Error ? error.message : String(error)
       })
     }
-  }, [])
+  }, [showLiveSelection])
 
   useEffect(() => {
-    const show = (raw: RawSelection) => {
-      selectionVersion.current++
-      setState({
-        status: 'ready',
-        page: selectionToMarkdown(raw),
-        source: `selection:${raw.at}`,
-        isSelection: true
-      })
-      // Only a fresh menu click runs a set; a stale selection found on reopening must not.
-      if (raw.runSetId !== undefined && Date.now() - raw.at < AUTO_RUN_MAX_AGE_MS) {
-        void setActiveSetId(raw.runSetId)
-        setPendingRun({setId: raw.runSetId, at: raw.at})
-      }
-    }
+    const show = showSelection
 
     // A selection sent via the context menu wins; otherwise show the whole page.
     const key = selectionKey(TAB_ID)
@@ -122,8 +148,11 @@ export default function SidebarApp() {
     ]).then(([stored, tab]) => {
       const raw = stored[key] as RawSelection | undefined
       // A selection left from a page the tab has since navigated away from no longer applies.
-      if (raw && (!tab?.url || !raw.url || raw.url === tab.url)) show(raw)
-      else {
+      if (raw && (!tab?.url || !raw.url || raw.url === tab.url)) {
+        show(raw)
+        // Later selection changes are followed from here on.
+        void watchTabSelection(TAB_ID)
+      } else {
         if (raw) void chrome.storage.session.remove(key)
         void load()
       }
@@ -139,7 +168,26 @@ export default function SidebarApp() {
     }
     chrome.storage.onChanged.addListener(onChanged)
     return () => chrome.storage.onChanged.removeListener(onChanged)
-  }, [load])
+  }, [load, showSelection])
+
+  // Selecting text on the page switches the panel to it; clearing the selection goes back to the page.
+  useEffect(() => {
+    const onMessage = (message: unknown, sender: chrome.runtime.MessageSender) => {
+      if (sender.tab?.id !== TAB_ID || !isSelectionMessage(message)) return
+      if (message.text) {
+        void showLiveSelection(message.text)
+        return
+      }
+      const current = stateRef.current
+      if (current.status !== 'ready' || !current.isSelection) return
+      // A context-menu selection must not come back when the panel is reopened.
+      void chrome.storage.session.remove(selectionKey(TAB_ID))
+      selectionVersion.current++
+      void load(true)
+    }
+    chrome.runtime.onMessage.addListener(onMessage)
+    return () => chrome.runtime.onMessage.removeListener(onMessage)
+  }, [load, showLiveSelection])
 
   // Follow this panel's own tab: navigating drops the previous page (and its result).
   useEffect(() => {

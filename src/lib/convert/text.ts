@@ -4,7 +4,7 @@ import {htmlToMarkdown} from '@/lib/html-to-markdown'
 export const plainText = (file: File) => file.text().then((t) => t.trim())
 
 export async function htmlFileToMarkdown(file: File): Promise<string> {
-  return htmlToMarkdown(cleanHtml(await file.text(), 'about:blank'))
+  return htmlToMarkdown(cleanHtml(await file.text()))
 }
 
 export async function jsonToMarkdown(file: File): Promise<string> {

@@ -1,5 +1,7 @@
 import {decide, type DecisionQuestion, type ProviderConfig} from '@/lib/decision/client'
-import {budgetOf, tokensToChars} from '@/lib/decision/limits'
+import {DecisionError} from '@/lib/decision/types'
+import {budgetOf, estimateTokens} from '@/lib/decision/limits'
+import {pageCheckQuestions, pageCheckResults} from '@/lib/page-checks'
 import {truncateMiddle} from '@/lib/truncate'
 import {findEvaluation, saveEvaluation} from '@/lib/question-sets'
 import type {StoredDocument} from '@/lib/db'
@@ -89,10 +91,18 @@ function hashInput(
       type: q.type,
       answers: q.answers.map((a) => [a.id, a.label, a.description ?? ''])
     })),
+    // Results saved before the check was sent are asked again, so they gain its answer.
+    checks: pageCheckQuestions(set.questions),
     // Title and URL are sent with the page, so they can change the answer too.
     page: {title: page.title, url: page.url, content: pageContent}
   })
 }
+
+/** On a token-limit error the page is cut to this share of what was last sent, then retried. */
+const RETRY_SHRINK = 0.6
+const MAX_RETRIES = 8
+/** Below this the page says too little to be worth another attempt. */
+const MIN_RETRY_PAGE_TOKENS = 200
 
 export interface EvaluateOutcome {
   evaluation: Evaluation
@@ -103,7 +113,7 @@ export interface EvaluateOutcome {
 async function prepare(set: QuestionSet, docs: StoredDocument[], page: PageContent, answerer: Answerer) {
   const budget = budgetOf(set, docs)
   if (budget.pageBudget <= 0) throw new Error('This set leaves no room for the page. Shrink it first.')
-  const {text: pageText, truncated} = truncateMiddle(page.markdown, tokensToChars(budget.pageBudget))
+  const {text: pageText, truncated} = truncateMiddle(page.markdown, budget.pageBudget)
   const hash = await sha256(hashInput(set, docs, page, pageText, answerer))
   return {pageText, truncated, hash}
 }
@@ -140,22 +150,50 @@ export async function evaluateSet(
 ): Promise<EvaluateOutcome> {
   const {set, page} = input
   const docs = input.documents
-  const {pageText, truncated, hash} = await prepare(set, docs, page, config)
+  const prepared = await prepare(set, docs, page, config)
+  // Retries keep this hash, so the next visit still finds the result in the cache.
+  const {hash} = prepared
+  let {pageText, truncated} = prepared
 
   if (!input.force) {
     const cached = await findEvaluation(set.id, hash)
     if (cached) return {evaluation: cached, cached: true}
   }
 
-  const result = await decide(config, {
-    state: {
-      context: set.context,
-      documents: docs.map((d) => ({title: d.title, content: d.markdown})),
-      page: {title: page.title, url: page.url, content: pageText}
-    },
-    questions: Object.assign({}, ...set.questions.map(toDecisionQuestions)),
-    signal: input.signal
-  })
+  const questions = Object.assign(
+    pageCheckQuestions(set.questions),
+    ...set.questions.map(toDecisionQuestions)
+  )
+  const ask = (content: string) =>
+    decide(config, {
+      state: {
+        context: set.context,
+        documents: docs.map((d) => ({title: d.title, content: d.markdown})),
+        page: {title: page.title, url: page.url, content}
+      },
+      questions,
+      signal: input.signal
+    })
+
+  // Token counts are estimates; when the provider still says the request is too long, cut the page further.
+  let result: Awaited<ReturnType<typeof decide>> | undefined
+  for (let attempt = 0; !result; attempt++) {
+    try {
+      result = await ask(pageText)
+    } catch (error) {
+      if (!(error instanceof DecisionError && error.tokenLimit)) throw error
+      const budget = Math.floor(estimateTokens(pageText) * RETRY_SHRINK)
+      if (attempt >= MAX_RETRIES || budget < MIN_RETRY_PAGE_TOKENS) {
+        throw new DecisionError(
+          "The request is over the model's token limit even with the page cut short. Shrink the context, documents or questions.",
+          error.status,
+          true
+        )
+      }
+      ;({text: pageText} = truncateMiddle(page.markdown, budget))
+      truncated = true
+    }
+  }
 
   const answers: Record<string, StoredAnswer> = {}
   for (const q of set.questions) {
@@ -208,6 +246,8 @@ export async function evaluateSet(
     model: result.model,
     cost: result.cost,
     truncated,
+    ...pageCheckResults(result.answers),
+    contentTokens: estimateTokens(page.markdown),
     createdAt: Date.now()
   }
   const id = await saveEvaluation(evaluation)

@@ -21,9 +21,10 @@ export function BudgetMeter({budget, className}: {budget: Budget; className?: st
       </div>
       <Progress value={percent} className={cn('h-1.5', over && '[&>div]:bg-destructive')} />
       <p className="text-xs text-muted-foreground">
-        Questions: ~{budget.totalQuestionTokens.toLocaleString()} tokens. About{' '}
-        {Math.max(budget.pageBudget, 0).toLocaleString()} tokens remain for each page (longer pages
-        are cut in the middle).
+        Questions: ~{(budget.totalQuestionTokens - budget.checkTokens).toLocaleString()} tokens, plus ~
+        {budget.checkTokens.toLocaleString()} for the built-in page checks sent with every evaluation
+        (mixed content, enough content). About {Math.max(budget.pageBudget, 0).toLocaleString()} tokens
+        remain for each page (longer pages are cut in the middle).
       </p>
     </div>
   )

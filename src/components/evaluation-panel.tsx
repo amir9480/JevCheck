@@ -7,9 +7,10 @@ import {Button} from '@/components/ui/button'
 import {Collapsible, CollapsibleContent, CollapsibleTrigger} from '@/components/ui/collapsible'
 import {Spinner} from '@/components/ui/spinner'
 import {providerById} from '@/lib/decision/providers'
-import {budgetOf, validateSet} from '@/lib/decision/limits'
+import {budgetOf, estimateTokens, validateSet} from '@/lib/decision/limits'
 import {evaluateSet, findCachedEvaluation, hashPage} from '@/lib/evaluate-set'
 import type {PageMarkdown} from '@/lib/extract-page'
+import {failedPageChecks, type PageCheck} from '@/lib/page-checks'
 import {ensureOriginAccess} from '@/lib/origin-access'
 import {
   deleteEvaluation,
@@ -22,6 +23,18 @@ import {toProviderConfig, type useKeys} from '@/lib/use-keys'
 
 /** "Provider · " prefix for a saved result; empty for results saved before the provider was recorded. */
 const providerLabel = (e: Evaluation) => (e.providerId ? `${providerById(e.providerId).label} · ` : '')
+
+/** Hints for failed page checks: one text for a whole page, one for a selection. */
+const CHECK_HINTS: Record<PageCheck['field'], {page: string; selection: string}> = {
+  mixedContent: {
+    page: 'This page mixes a lot of unrelated content, so these answers may be unreliable. For better results, select only the main text on the page; the panel switches to your selection.',
+    selection: 'Your selection mixes unrelated content, so these answers may be unreliable. Select only text about one subject and evaluate again.'
+  },
+  insufficientContent: {
+    page: "This page may not have enough content or context to answer these questions, so some answers may be guesses. Check that it's the right page and that it has fully loaded.",
+    selection: 'Your selection may be too short or lack context to answer these questions, so some answers may be guesses. Select more of the surrounding text and evaluate again.'
+  }
+}
 
 const formatTime = (at: number) =>
   new Date(at).toLocaleString(undefined, {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'})
@@ -244,6 +257,17 @@ export function EvaluationPanel({
       <div className="-mx-2 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-2 pb-1">
       {shown && (
         <div className="flex flex-col gap-1.5">
+          {failedPageChecks(
+            shown.evaluation,
+            shown.live && page ? estimateTokens(page.markdown) : undefined
+          ).map((field) => (
+            <Alert key={field}>
+              <TriangleAlert />
+              <AlertDescription>
+                {CHECK_HINTS[field][pageSource?.startsWith('selection:') ? 'selection' : 'page']}
+              </AlertDescription>
+            </Alert>
+          ))}
           {shown.evaluation.truncated && (
             <Alert>
               <AlertDescription>

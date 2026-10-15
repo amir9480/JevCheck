@@ -91,6 +91,12 @@ export interface Evaluation {
   model: string
   cost?: number
   truncated: boolean
+  /** Probability that the evaluated text mixes many unrelated topics (see page-checks.ts). Absent on old results. */
+  mixedContent?: number
+  /** Probability that the evaluated text is too thin to answer the questions (see page-checks.ts). Absent on old results. */
+  insufficientContent?: number
+  /** Estimated tokens of the evaluated text before truncation. Absent on old results. */
+  contentTokens?: number
   createdAt: number
 }
 

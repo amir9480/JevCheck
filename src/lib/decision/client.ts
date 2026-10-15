@@ -1,4 +1,4 @@
-import {PROTOCOLS, errorMessage} from './protocols'
+import {PROTOCOLS, errorMessage, isTokenLimitError} from './protocols'
 import type {ProviderConfig} from './providers'
 import {DecisionError, type DecisionQuestion, type DecisionResult} from './types'
 
@@ -26,7 +26,9 @@ export async function decide(
   }
 
   const body = await response.json().catch(() => null)
-  if (!response.ok) throw new DecisionError(errorMessage(response.status, body), response.status)
+  if (!response.ok) {
+    throw new DecisionError(errorMessage(response.status, body), response.status, isTokenLimitError(body))
+  }
   return protocol.decode(body, request)
 }
 

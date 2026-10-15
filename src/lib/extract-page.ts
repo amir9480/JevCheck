@@ -52,6 +52,6 @@ export async function extractPage(tabId: number): Promise<PageMarkdown> {
   }
   if (!result) throw new Error('The page returned no content.')
 
-  const markdown = htmlToMarkdown(cleanHtml(result.html, result.url))
+  const markdown = htmlToMarkdown(cleanHtml(result.html))
   return {title: result.title, url: result.url, markdown}
 }

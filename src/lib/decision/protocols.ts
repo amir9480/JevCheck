@@ -161,7 +161,12 @@ export const PROTOCOLS: Record<DecisionProtocol, Protocol> = {
   typesafe: keyedProtocol('/v1/systemone', 'noul')
 }
 
+/** e.g. `{"detail": {"error_type": "max_tokens_exceeded"}}` */
+export const isTokenLimitError = (body: any): boolean =>
+  /max_tokens_exceeded|context_length_exceeded|too many tokens/i.test(JSON.stringify(body ?? ''))
+
 export function errorMessage(status: number, body: any): string {
+  if (isTokenLimitError(body)) return "The request is over the model's token limit."
   const detail = body?.error?.message ?? body?.message ?? (typeof body?.error === 'string' ? body.error : '')
   if (status === 401 || status === 403) return `The API key was rejected${detail ? `: ${detail}` : '.'}`
   if (status === 402) return `Insufficient credits${detail ? `: ${detail}` : '.'}`

@@ -30,7 +30,9 @@ export interface DecisionRequest {
 export class DecisionError extends Error {
   constructor(
     message: string,
-    readonly status?: number
+    readonly status?: number,
+    /** The request was over the model's token limit; a shorter page may succeed. */
+    readonly tokenLimit = false
   ) {
     super(message)
     this.name = 'DecisionError'

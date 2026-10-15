@@ -1,12 +1,13 @@
 import type {Question, QuestionSet} from '@/lib/question-types'
 import {sanitizeDependencies} from '@/lib/dependencies'
+import {pageCheckQuestions} from '@/lib/page-checks'
 
 // Jev 1.13: 64k tokens per request, of which 32k are for `state` plus the longest question.
 export const STATE_TOKENS = 32_000
 export const REQUEST_TOKENS = 64_000
 /** Token counts are estimates, so stay 10% under every limit. */
 const SAFETY = 0.9
-/** Conservative: real text averages ~4 characters per token. */
+/** Conservative: English text averages ~4 characters per token. */
 export const CHARS_PER_TOKEN = 3.5
 
 export const MAX_CHOICES = 255
@@ -24,8 +25,27 @@ export const MAX_DETAILS_CHARS = 2000
 export const MAX_LABEL_CHARS = 80
 export const MAX_DESCRIPTION_CHARS = 300
 
-export const estimateTokens = (text: string) => Math.ceil(text.length / CHARS_PER_TOKEN)
-export const tokensToChars = (tokens: number) => Math.floor(tokens * CHARS_PER_TOKEN)
+/**
+ * Estimated tokens for one code point. Tokenizers are trained mostly on English, so other
+ * scripts split into far more tokens per character; a flat chars/token ratio undercounts
+ * Persian, Russian or Chinese pages by 2–4x.
+ */
+export function codePointTokens(cp: number): number {
+  if (cp < 0x80) return 1 / CHARS_PER_TOKEN // ASCII
+  if (cp < 0x370) return 0.5 // Latin-1, Latin Extended, IPA, diacritics
+  if (cp < 0x590) return 0.6 // Greek, Cyrillic, Armenian
+  if (cp < 0x900) return 1 // Hebrew, Arabic, Syriac, Thaana
+  if (cp < 0x1100) return 1.2 // Indic scripts, Thai, Lao, Tibetan, Myanmar, Georgian
+  if (cp >= 0x2000 && cp < 0x2e80) return 1 // punctuation, symbols, arrows
+  if (cp < 0x10000) return 1.2 // CJK, kana, Hangul, other BMP
+  return 2 // emoji and other astral characters
+}
+
+export function estimateTokens(text: string): number {
+  let tokens = 0
+  for (const ch of text) tokens += codePointTokens(ch.codePointAt(0)!)
+  return Math.ceil(tokens)
+}
 
 const answerTokens = (a: Question['answers'][number]) =>
   estimateTokens(a.label) + estimateTokens(a.description ?? '') + 8
@@ -57,7 +77,10 @@ export interface Budget {
   /** Context + included documents. */
   fixedTokens: number
   longestQuestion: number
+  /** The set's questions plus the hidden page checks. */
   totalQuestionTokens: number
+  /** The hidden page checks (page-checks.ts) alone; part of `totalQuestionTokens`. */
+  checkTokens: number
   /** Max tokens `state` may use (context + documents + page). */
   stateBudget: number
   /** What is left for the page. May be negative. */
@@ -70,9 +93,12 @@ export function budgetOf(
   set: Pick<QuestionSet, 'context' | 'questions'>,
   includedDocs: DocumentSize[]
 ): Budget {
+  // The hidden page checks go with every request.
+  const hidden = Object.values(pageCheckQuestions(set.questions)).map((q) => estimateTokens(q.instructions) + 12)
   const perQuestion = set.questions.map(questionTokens)
-  const longestQuestion = Math.max(0, ...set.questions.map(longestItemTokens))
-  const totalQuestionTokens = perQuestion.reduce((a, b) => a + b, 0)
+  const longestQuestion = Math.max(...hidden, ...set.questions.map(longestItemTokens))
+  const checkTokens = hidden.reduce((a, b) => a + b, 0)
+  const totalQuestionTokens = perQuestion.reduce((a, b) => a + b, checkTokens)
   const fixedTokens = estimateTokens(set.context) + includedDocs.reduce((s, d) => s + documentTokens(d), 0) + 40
 
   // 32k for state + the longest question, and 64k for the whole request.
@@ -85,6 +111,7 @@ export function budgetOf(
     fixedTokens,
     longestQuestion,
     totalQuestionTokens,
+    checkTokens,
     stateBudget,
     pageBudget,
     headroom: pageBudget - MIN_PAGE_TOKENS
