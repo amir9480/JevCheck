@@ -34,3 +34,5 @@ yarn-error.log*
 !.env.example
 !.env.*.example
 release
+
+build-firefox

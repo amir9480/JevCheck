@@ -47,7 +47,7 @@ export async function extractPage(tabId: number): Promise<PageMarkdown> {
     }
     const detail = error instanceof Error ? ` (${error.message})` : ''
     throw new Error(
-      `This page can't be read: browser pages, the Web Store and PDFs are restricted, and the panel must be opened by clicking the toolbar icon on the page.${detail}`
+      `This page can't be read: browser pages, extension stores and PDFs are restricted, and the panel must be opened by clicking the toolbar icon on the page.${detail}`
     )
   }
   if (!result) throw new Error('The page returned no content.')

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-JevCheck: a Chromium-only (MV3) extension. Clicking the toolbar icon opens a side panel showing the active page as Markdown (Raw / Preview tabs).
+JevCheck: an MV3 extension for Chromium, with a Firefox port. Clicking the toolbar icon opens a side panel (Firefox: sidebar) showing the active page as Markdown (Raw / Preview tabs).
 
 ## Stack
 Vite 8 + `@crxjs/vite-plugin` (root `src/`, config in `vite.config.ts`, manifest in `manifest.config.ts` (`defineManifest`)), TypeScript, React 18, Tailwind v4 (CSS-first, no tailwind.config), shadcn/ui (new-york), pnpm.
@@ -8,8 +8,12 @@ Vite 8 + `@crxjs/vite-plugin` (root `src/`, config in `vite.config.ts`, manifest
 ## Commands
 - `pnpm dev` — Vite dev server with HMR; load `build` unpacked in Chrome
 - `pnpm build:chrome` — production build to `build`
+- `pnpm dev:firefox` (`scripts/dev-firefox.mjs`: `vite build --watch` + `web-ext run`, auto-reload, no HMR), `pnpm build:firefox` (to `build-firefox`), `pnpm package:firefox`, `pnpm lint:firefox`
 - `pnpm exec tsc --noEmit` — typecheck (no test runner configured)
 - Add shadcn components with the shadcn CLI; `components.json` aliases point at `src/components/ui`.
+
+## Firefox port
+`vite --mode firefox` switches `manifest.config.ts` (`sidebar_action`, `background.scripts`, `browser_specific_settings.gecko`, no `sidePanel`) and `vite.config.ts` (crxjs `browser: 'firefox'`, `build-firefox`, sidebar as an explicit input). Code branches on `import.meta.env.MODE === 'firefox'` (static, so each build drops the other branch): `background.ts` uses `chrome.sidebarAction` (`setPanel` per tab, only when the URL differs, since it reloads the sidebar; typed in `types.d.ts`). The Firefox sidebar is per window and shows the active tab's panel; opened without `?tabId` (from Firefox's sidebar menu), `sidebar/scripts.tsx` redirects to the active tab. `permissions.request` must be the first await in a gesture (Firefox drops the gesture at any await), so never check `contains` before it. Keep both builds working.
 
 ## Architecture
 1. `src/background.ts` — opens the side panel from `action.onClicked` and the context menu. The panel is per tab: the global panel is disabled and every tab gets `sidebar/index.html?tabId=<id>` via `sidePanel.setOptions({tabId})` (re-applied on tab create/activate/update). Selections are handed over in `chrome.storage.session` under `selectionKey(tabId)`.

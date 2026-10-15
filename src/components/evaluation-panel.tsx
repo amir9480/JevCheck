@@ -75,6 +75,7 @@ export function EvaluationPanel({
   const [isRunning, setIsRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const scrollerRef = useRef<HTMLDivElement>(null)
   const confirm = useConfirm()
   const pageUrl = page?.url ?? null
 
@@ -182,7 +183,11 @@ export function EvaluationPanel({
       await ensureOriginAccess(config.baseUrl)
       const outcome = await evaluateSet(config, {set, documents: included, page, force, signal: controller.signal})
       // Navigated or the page changed after the answer arrived: it is saved in history but not shown.
-      if (!controller.signal.aborted) setShown({...outcome, live: true})
+      if (!controller.signal.aborted) {
+        setShown({...outcome, live: true})
+        // Each new result starts at its first answer.
+        scrollerRef.current?.scrollTo({top: 0})
+      }
     } catch (err) {
       if (!controller.signal.aborted) setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -254,7 +259,7 @@ export function EvaluationPanel({
       </div>
 
       {/* Padding + negative margin keep focus rings and borders from being clipped by the scroller. */}
-      <div className="-mx-2 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-2 pb-1">
+      <div ref={scrollerRef} className="-mx-2 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-2 pb-1">
       {shown && (
         <div className="flex flex-col gap-1.5">
           {failedPageChecks(

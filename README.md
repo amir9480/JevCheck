@@ -81,7 +81,7 @@ Jev Check is **completely bring-your-own-key**.
 | `storage`, `unlimitedStorage` | Keep sets, documents, results and encrypted keys locally |
 | Optional hosts | Reach your provider; or read a site when the panel was not opened from the toolbar there (asked per site) |
 
-Browser pages (`chrome://`), the Chrome Web Store and PDFs viewed in the browser can't be read.
+Browser pages (`chrome://`, `about:`), the Chrome Web Store, addons.mozilla.org and PDFs viewed in the browser can't be read.
 
 > Jev Check only sees the page's **readable text**. Images, layout, page speed, HTML structure and source code are stripped, so it can't judge them. Templates are written with that in mind.
 
@@ -98,7 +98,7 @@ Browser pages (`chrome://`), the Chrome Web Store and PDFs viewed in the browser
 
 ## Getting started
 
-Requirements: [Node.js](https://nodejs.org) 20+, [pnpm](https://pnpm.io) and Chrome (or another Chromium browser) 114+.
+Requirements: [Node.js](https://nodejs.org) 20+, [pnpm](https://pnpm.io) and Chrome (or another Chromium browser) 114+, or Firefox 140+.
 
 ```bash
 git clone https://github.com/amir9480/JevCheck.git
@@ -115,6 +115,8 @@ pnpm build:chrome        # outputs to build
 
 Then open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked** and select `build`. Click the toolbar icon on any page to open the side panel.
 
+For Firefox, run `pnpm build:firefox` (outputs to `build-firefox`), open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on** and pick `build-firefox/manifest.json`. Clicking the toolbar icon opens the sidebar; it follows the active tab.
+
 | Command | Purpose |
 | --- | --- |
 | `pnpm dev` | Dev mode with HMR (crxjs) |
@@ -123,6 +125,10 @@ Then open `chrome://extensions`, enable **Developer mode**, choose **Load unpack
 | `pnpm build` | Typecheck and production build |
 | `pnpm build:chrome` | Production build without typecheck |
 | `pnpm package` | Typecheck, build and zip to `release/` for the Web Store |
+| `pnpm dev:firefox` | Rebuild on change and run Firefox with the add-on loaded (auto-reloads; no HMR). `-- --firefox=deved` picks another Firefox |
+| `pnpm build:firefox` | Firefox production build to `build-firefox` |
+| `pnpm package:firefox` | Typecheck, build and zip to `release/` for addons.mozilla.org |
+| `pnpm lint:firefox` | Validate `build-firefox` with `web-ext lint` |
 | `pnpm exec tsc --noEmit` | Typecheck |
 
 ## Tech stack

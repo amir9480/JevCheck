@@ -3,17 +3,32 @@ import {db} from '@/lib/db'
 import {collectVisibleHtml} from '@/lib/visible-html'
 import {selectionKey, type RawSelection} from '@/lib/selection'
 
-// Open the side panel from the toolbar click ourselves. Unlike
-// setPanelBehavior({openPanelOnActionClick: true}), a real action.onClicked
-// event grants `activeTab` for the clicked tab, which the panel needs to read it.
-chrome.sidePanel?.setPanelBehavior({openPanelOnActionClick: false})
+// Firefox has no side panel API, only a sidebar (`sidebarAction`), one per window. The build mode is
+// static, so the other browser's branch is dropped from each build.
+const FIREFOX = import.meta.env.MODE === 'firefox'
 
-// One panel per tab: the global panel stays disabled, and every tab gets its own
-// instance of the page (its URL carries the tab id), so panels never share state.
-void chrome.sidePanel?.setOptions({enabled: false})
+if (!FIREFOX) {
+  // Open the side panel from the toolbar click ourselves. Unlike
+  // setPanelBehavior({openPanelOnActionClick: true}), a real action.onClicked
+  // event grants `activeTab` for the clicked tab, which the panel needs to read it.
+  chrome.sidePanel?.setPanelBehavior({openPanelOnActionClick: false})
 
-const enablePanel = (tabId: number) =>
-  chrome.sidePanel.setOptions({tabId, path: `sidebar/index.html?tabId=${tabId}`, enabled: true})
+  // One panel per tab: the global panel stays disabled, and every tab gets its own
+  // instance of the page (its URL carries the tab id), so panels never share state.
+  void chrome.sidePanel?.setOptions({enabled: false})
+}
+
+const panelPath = (tabId: number) => `sidebar/index.html?tabId=${tabId}`
+
+// Firefox's sidebar shows the active tab's panel and reloads when it is set to another URL, so only
+// set it when it differs.
+const enablePanel = async (tabId: number) => {
+  if (!FIREFOX) return chrome.sidePanel.setOptions({tabId, path: panelPath(tabId), enabled: true})
+  const panel = chrome.runtime.getURL(panelPath(tabId))
+  if ((await chrome.sidebarAction.getPanel({tabId}).catch(() => undefined)) !== panel) {
+    await chrome.sidebarAction.setPanel({tabId, panel}).catch(() => undefined)
+  }
+}
 
 chrome.tabs.onCreated.addListener((tab) => {
   if (tab.id !== undefined) void enablePanel(tab.id)
@@ -77,7 +92,8 @@ void chrome.tabs.query({}).then((tabs) => {
 /** Opens this tab's own panel. Must be called synchronously inside a user gesture. */
 const openPanel = (tabId: number) => {
   void enablePanel(tabId)
-  void chrome.sidePanel.open({tabId})
+  if (FIREFOX) void chrome.sidebarAction.open()
+  else void chrome.sidePanel.open({tabId})
 }
 
 chrome.action.onClicked.addListener((tab) => {

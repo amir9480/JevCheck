@@ -55,16 +55,21 @@
     "tailwindcss": "^4.1.3",
     "tw-animate-css": "1.2.5",
     "typescript": "7.0.2",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "web-ext": "^10.7.0"
   },
   "scripts": {
     "dev": "vite",
     "dev:chrome": "concurrently -k -n vite,chrome \"vite\" \"node scripts/launch-chrome.mjs\"",
     "dev:google-chrome": "concurrently -k -n vite,chrome \"vite\" \"node scripts/launch-chrome.mjs --google-chrome\"",
+    "dev:firefox": "node scripts/dev-firefox.mjs",
     "build": "tsc --noEmit && vite build",
     "build:chrome": "vite build",
+    "build:firefox": "vite build --mode firefox",
     "preview": "vite preview",
-    "package": "pnpm build && node scripts/package.mjs"
+    "package": "pnpm build && node scripts/package.mjs",
+    "package:firefox": "tsc --noEmit && vite build --mode firefox && node scripts/package.mjs --firefox",
+    "lint:firefox": "web-ext lint --source-dir build-firefox"
   },
   "packageManager": "pnpm@10.11.1",
   "pnpm": {
