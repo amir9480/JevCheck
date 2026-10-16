@@ -1,4 +1,4 @@
-// Zips the production build for upload: `pnpm package` -> release/jevcheck-<version>.zip,
+// Zips the production build for upload: `pnpm package` -> release/jevcheck-chrome-<version>.zip,
 // `pnpm package:firefox` -> release/jevcheck-firefox-<version>.zip
 import {existsSync, mkdirSync, readFileSync} from 'node:fs'
 import path from 'node:path'
@@ -19,7 +19,7 @@ if (/localhost|127\.0\.0\.1/.test(leaks) || manifest.key) {
 
 const out = path.join(root, 'release')
 mkdirSync(out, {recursive: true})
-const file = path.join(out, `jevcheck-${firefox ? 'firefox-' : ''}${manifest.version}.zip`)
+const file = path.join(out, `jevcheck-${firefox ? 'firefox' : 'chrome'}-${manifest.version}.zip`)
 const zip = new AdmZip()
 zip.addLocalFolder(buildDir)
 zip.writeZip(file)
