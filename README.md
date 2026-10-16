@@ -29,7 +29,7 @@ Jev Check reads the page you are on, turns it into clean Markdown, and sends it 
 
 - **Question sets**: yes/no, choice, score (2–10 ordered levels) and multi-pick questions, with ready-made answers, color palettes and icons. Add hidden *details for the model* to any question.
 - **Ready-made templates**: start in seconds, then adapt them. Clone any set to make a variant.
-- **Your own documents**: upload a resume, a budget or a checklist (DOCX, PDF, Markdown, TXT, HTML, CSV, JSON), review and edit it as Markdown, and have the page judged against it. Documents form one shared library that any set can use.
+- **Your own documents**: upload a resume, a budget or a checklist (DOCX, PDF, Markdown, TXT), review and edit it as Markdown, and have the page judged against it. Documents form one shared library that any set can use.
 - **Spreadsheet answers**: import a long answer list (e.g. a list of technologies) from CSV, TSV or XLSX.
 - **Follow-up logic**: show a question only when an earlier answer qualifies; hidden questions can still be revealed.
 - **Saved results**: identical inputs (same page, set, documents and model) reuse the earlier result, with a per-page history you can browse and prune.

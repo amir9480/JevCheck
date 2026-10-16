@@ -3,7 +3,7 @@ import type {DragEvent} from 'react'
 import {Upload} from 'lucide-react'
 import {Spinner} from '@/components/ui/spinner'
 import {cn} from '@/lib/utils'
-import {ACCEPT, SUPPORTED_LABEL} from '@/lib/convert'
+import {ACCEPT} from '@/lib/convert'
 
 /**
  * Multi-file dropzone: click/keyboard browse, drag-drop, and paste anywhere in
@@ -87,7 +87,7 @@ export function UploadDropzone({
         <span className="text-xs font-medium">
           {isBusy ? 'Converting…' : 'Drop, paste, or click to add documents'}
         </span>
-        <span className="text-[11px] text-muted-foreground">{SUPPORTED_LABEL} · up to 20 MB each</span>
+        <span className="text-[11px] text-muted-foreground">Up to 20 MB each</span>
       </div>
     </>
   )

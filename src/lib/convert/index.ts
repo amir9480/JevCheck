@@ -15,7 +15,6 @@ const CONVERTERS: Record<string, (file: File) => Promise<string>> = {
 }
 
 export const ACCEPT = Object.keys(CONVERTERS).map((e) => `.${e}`).join(',')
-export const SUPPORTED_LABEL = 'DOCX, PDF, MD, TXT, HTML, CSV, JSON'
 
 const extOf = (name: string) => name.split('.').pop()?.toLowerCase() ?? ''
 
