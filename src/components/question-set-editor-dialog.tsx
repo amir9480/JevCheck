@@ -267,6 +267,14 @@ export function QuestionSetEditorDialog({
                 isBusy={queue.isConverting}
                 disabled={!!queue.current || !!editingDoc}
               />
+              <button
+                type="button"
+                disabled={!!queue.current || !!editingDoc || queue.isConverting}
+                onClick={() => void queue.createBlank()}
+                className="-mt-1 cursor-pointer self-center rounded-sm text-xs text-muted-foreground underline-offset-2 hover:text-foreground outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+              >
+                Or create a document from text
+              </button>
               {queue.errors.map((error) => (
                 <Alert key={error.key} variant="destructive" className="relative pr-8">
                   <AlertTitle className="truncate">{error.fileName}</AlertTitle>

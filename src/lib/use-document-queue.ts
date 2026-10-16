@@ -4,6 +4,7 @@ import {uniqueTitle} from '@/lib/db'
 
 export interface Draft {
   key: number
+  /** Empty for a document written from scratch (`createBlank`). */
   fileName: string
   title: string
   markdown: string
@@ -55,6 +56,13 @@ export function useDocumentQueue() {
     setPending((prev) => [...prev, ...files.map((file) => ({key: nextKey++, file}))])
   }, [])
 
+  /** Opens an empty draft to write or paste text into. Call only while nothing is open or converting. */
+  const createBlank = useCallback(async () => {
+    const key = nextKey++
+    const title = await uniqueTitle('Untitled document')
+    setCurrent({key, fileName: '', title, markdown: ''})
+  }, [])
+
   /** Call after the dialog was saved or cancelled; advances to the next file. */
   const resolveCurrent = useCallback(() => setCurrent(null), [])
 
@@ -69,6 +77,7 @@ export function useDocumentQueue() {
     remaining: pending.length,
     errors,
     enqueue,
+    createBlank,
     resolveCurrent,
     dismissError
   }

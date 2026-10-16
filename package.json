@@ -33,7 +33,8 @@
     "read-excel-file": "^9.3.12",
     "remark-gfm": "^4.0.1",
     "turndown": "^7.2.4",
-    "turndown-plugin-gfm": "^1.0.2"
+    "turndown-plugin-gfm": "^1.0.2",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^3.0.0",
@@ -53,6 +54,7 @@
     "concurrently": "^10.0.6",
     "tailwind-merge": "^2.6.0",
     "tailwindcss": "^4.1.3",
+    "tsx": "^4.23.15",
     "tw-animate-css": "1.2.5",
     "typescript": "7.0.2",
     "vite": "^8.3.4",
@@ -63,7 +65,8 @@
     "dev:chrome": "concurrently -k -n vite,chrome \"vite\" \"node scripts/launch-chrome.mjs\"",
     "dev:google-chrome": "concurrently -k -n vite,chrome \"vite\" \"node scripts/launch-chrome.mjs --google-chrome\"",
     "dev:firefox": "node scripts/dev-firefox.mjs",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && tsx scripts/generate-schema.ts --check && vite build",
+    "schema": "tsx scripts/generate-schema.ts",
     "build:chrome": "vite build",
     "build:firefox": "vite build --mode firefox",
     "preview": "vite preview",

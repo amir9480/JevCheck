@@ -1,5 +1,6 @@
 import {Suspense, lazy, useState} from 'react'
-import {FileText, FilePlus2, Trash2} from 'lucide-react'
+import {FileText, FilePlus2, Import, Trash2} from 'lucide-react'
+import {ImportQuestionSetDialog} from '@/components/import-question-set-dialog'
 import {TemplateCard, TemplateSearch, filterTemplates} from '@/components/template-card'
 import {UploadDropzone} from '@/components/upload-dropzone'
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert'
@@ -17,6 +18,7 @@ import {budgetOf} from '@/lib/decision/limits'
 import {deleteDocument, markOnboarded} from '@/lib/db'
 import {ICONS} from '@/lib/icon-map'
 import {createFromTemplate, resolveSetDocuments, useDocuments} from '@/lib/question-sets'
+import type {QuestionSet} from '@/lib/question-types'
 import {useDocumentQueue} from '@/lib/use-document-queue'
 import {TEMPLATES, type QuestionSetTemplate} from '@/templates'
 
@@ -26,16 +28,18 @@ const DocumentReviewDialog = lazy(() =>
 
 /**
  * First-run flow: pick what you want to check, upload the documents the template needs, then
- * `onFinished` (the caller opens the provider settings if no API key exists yet). Closing the
+ * `onFinished` (the caller opens the provider settings if no API key exists yet). Importing a
+ * configuration finishes with the created set, which the caller opens in the editor. Closing the
  * dialog at any point counts as finishing, and it never reappears.
  */
-export function OnboardingDialog({onFinished}: {onFinished: () => void}) {
+export function OnboardingDialog({onFinished}: {onFinished: (imported?: QuestionSet) => void}) {
   const [template, setTemplate] = useState<QuestionSetTemplate | null>(null)
   const [step, setStep] = useState<'choose' | 'documents'>('choose')
   const [documentIds, setDocumentIds] = useState<number[]>([])
   const [isWorking, setIsWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [importing, setImporting] = useState(false)
   const queue = useDocumentQueue()
   const library = useDocuments()
 
@@ -100,6 +104,13 @@ export function OnboardingDialog({onFinished}: {onFinished: () => void}) {
                   />
                 )
               })}
+              <TemplateCard
+                dashed
+                icon={<Import />}
+                title="Import"
+                description="Paste or open a configuration exported from Jev Check."
+                onClick={() => setImporting(true)}
+              />
               <p className="text-xs text-muted-foreground">
                 Prefer to build your own? Skip this and use the + button later.
               </p>
@@ -114,6 +125,14 @@ export function OnboardingDialog({onFinished}: {onFinished: () => void}) {
                 {template?.requireDocuments ? 'Next' : 'Create'}
               </Button>
             </DialogFooter>
+            <ImportQuestionSetDialog
+              open={importing}
+              onOpenChange={setImporting}
+              onImported={(set) => {
+                setImporting(false)
+                void markOnboarded().then(() => onFinished(set))
+              }}
+            />
           </>
         ) : (
           <>

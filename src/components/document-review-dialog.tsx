@@ -80,14 +80,14 @@ export function DocumentReviewDialog({
         className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-2xl"
       >
         <DialogHeader>
-          <DialogTitle>Save document</DialogTitle>
+          <DialogTitle>{draft.fileName ? 'Save document' : 'New document'}</DialogTitle>
           <DialogDescription className="truncate">
-            {draft.fileName}
+            {draft.fileName || 'Write or paste the content.'}
             {remaining > 0 && ` · ${remaining} more after this`}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+        <div className="-mx-2 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-2 py-1">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="doc-title">Title</Label>
             <Input

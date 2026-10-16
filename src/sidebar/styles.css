@@ -170,22 +170,26 @@
   padding: 0.75rem 1rem;
 }
 
-/* The toolbar now holds ~12 buttons: shrink them and let it wrap inside narrow panels. */
-.markdown-editor .milkdown .milkdown-toolbar {
-  flex-wrap: wrap;
-  max-width: min(100%, 24rem);
+/* Fixed formatting bar (Crepe TopBar): compact buttons that wrap inside narrow panels. */
+.markdown-editor .milkdown .milkdown-top-bar {
+  padding: 0 4px;
+  min-height: 0;
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
 }
-.markdown-editor .milkdown .milkdown-toolbar .toolbar-item {
+.markdown-editor .milkdown .milkdown-top-bar .top-bar-item {
   width: 28px;
   height: 28px;
-  margin: 3px;
+  margin: 3px 1px;
   padding: 2px;
 }
-.markdown-editor .milkdown .milkdown-toolbar .toolbar-item svg {
-  width: 24px;
-  height: 24px;
+.markdown-editor .milkdown .milkdown-top-bar .top-bar-heading-selector {
+  padding: 3px;
 }
-.markdown-editor .milkdown .milkdown-toolbar .divider {
-  margin: 8px 4px;
+.markdown-editor .milkdown .milkdown-top-bar .top-bar-heading-button {
+  height: 28px;
+}
+.markdown-editor .milkdown .milkdown-top-bar .top-bar-divider {
+  margin: 6px 4px;
   height: 16px;
 }

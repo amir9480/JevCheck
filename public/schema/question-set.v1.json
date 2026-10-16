@@ -1,0 +1,415 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/amir9480/JevCheck/main/public/schema/question-set.v1.json",
+  "type": "object",
+  "properties": {
+    "$comment": {
+      "type": "string"
+    },
+    "$schema": {
+      "type": "string"
+    },
+    "format": {
+      "type": "string",
+      "const": "jevcheck-question-set"
+    },
+    "version": {
+      "type": "number",
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60,
+      "description": "Question set name."
+    },
+    "context": {
+      "default": "",
+      "description": "Markdown given to the model before the documents and the page.",
+      "type": "string"
+    },
+    "requireDocuments": {
+      "default": false,
+      "description": "Block evaluation until the user adds at least one document to the set.",
+      "type": "boolean"
+    },
+    "questions": {
+      "minItems": 1,
+      "maxItems": 50,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Question"
+      }
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "name",
+    "questions"
+  ],
+  "title": "Jev Check question set",
+  "description": "Jev Check question set configuration. To use it, install the Jev Check browser extension (https://github.com/amir9480/JevCheck), click + and choose \"Import\".",
+  "$defs": {
+    "Question": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Unique id within the file."
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500,
+              "description": "The question."
+            },
+            "details": {
+              "description": "Extra instructions for the model. Never shown in the side panel.",
+              "type": "string",
+              "maxLength": 2000
+            },
+            "dependsOn": {
+              "$ref": "#/$defs/Dependency"
+            },
+            "type": {
+              "type": "string",
+              "const": "boolean",
+              "description": "Yes / no."
+            },
+            "answers": {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Answer"
+              },
+              "description": "Exactly two: yes first, then no."
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "type",
+            "answers"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Unique id within the file."
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500,
+              "description": "The question."
+            },
+            "details": {
+              "description": "Extra instructions for the model. Never shown in the side panel.",
+              "type": "string",
+              "maxLength": 2000
+            },
+            "dependsOn": {
+              "$ref": "#/$defs/Dependency"
+            },
+            "type": {
+              "type": "string",
+              "const": "choice",
+              "description": "Pick one answer."
+            },
+            "answers": {
+              "minItems": 1,
+              "maxItems": 255,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Answer"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "type",
+            "answers"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Unique id within the file."
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500,
+              "description": "The question."
+            },
+            "details": {
+              "description": "Extra instructions for the model. Never shown in the side panel.",
+              "type": "string",
+              "maxLength": 2000
+            },
+            "dependsOn": {
+              "$ref": "#/$defs/Dependency"
+            },
+            "type": {
+              "type": "string",
+              "const": "score",
+              "description": "A level on an ordered scale."
+            },
+            "answers": {
+              "minItems": 2,
+              "maxItems": 10,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Answer"
+              },
+              "description": "Lowest to highest."
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "type",
+            "answers"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Unique id within the file."
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500,
+              "description": "The question."
+            },
+            "details": {
+              "description": "Extra instructions for the model. Never shown in the side panel.",
+              "type": "string",
+              "maxLength": 2000
+            },
+            "dependsOn": {
+              "$ref": "#/$defs/Dependency"
+            },
+            "type": {
+              "type": "string",
+              "const": "multi",
+              "description": "Each answer is judged on its own."
+            },
+            "answers": {
+              "minItems": 1,
+              "maxItems": 255,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Answer"
+              }
+            },
+            "threshold": {
+              "description": "Answers at or above this probability count as picked. Default 0.5.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "type",
+            "answers"
+          ]
+        }
+      ]
+    },
+    "Dependency": {
+      "type": "object",
+      "properties": {
+        "questionId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "An earlier question."
+        },
+        "answerIds": {
+          "description": "boolean / choice: the top answer is one of these. multi: any of these is picked.",
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique id within the file."
+          }
+        },
+        "minScore": {
+          "description": "score: the level index (0 = lowest) must be at least this.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "questionId"
+      ],
+      "description": "Show this question only when an earlier question was answered this way."
+    },
+    "Answer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique id within the file."
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "description": {
+          "description": "Shown under the label.",
+          "type": "string",
+          "maxLength": 300
+        },
+        "color": {
+          "description": "Hex color, e.g. #16a34a.",
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "icon": {
+          "description": "Lucide icon name.",
+          "examples": [
+            "activity",
+            "alert-circle",
+            "alert-triangle",
+            "arrow-down",
+            "arrow-down-right",
+            "arrow-right",
+            "arrow-up",
+            "arrow-up-right",
+            "award",
+            "badge-check",
+            "ban",
+            "banknote",
+            "battery",
+            "battery-low",
+            "bell",
+            "bookmark",
+            "briefcase",
+            "bug",
+            "building",
+            "calendar",
+            "check",
+            "check-check",
+            "check-circle",
+            "circle",
+            "circle-alert",
+            "circle-dot",
+            "circle-minus",
+            "circle-plus",
+            "clock",
+            "cloud",
+            "code",
+            "coffee",
+            "compass",
+            "crown",
+            "dollar-sign",
+            "eye",
+            "eye-off",
+            "flag",
+            "flame",
+            "frown",
+            "gauge",
+            "gem",
+            "gift",
+            "globe",
+            "graduation-cap",
+            "hammer",
+            "hand",
+            "handshake",
+            "heart",
+            "heart-crack",
+            "help-circle",
+            "home",
+            "hourglass",
+            "info",
+            "key",
+            "laugh",
+            "layers",
+            "leaf",
+            "lightbulb",
+            "link",
+            "lock",
+            "lock-open",
+            "mail",
+            "map-pin",
+            "medal",
+            "meh",
+            "message",
+            "minus",
+            "moon",
+            "octagon-alert",
+            "octagon-x",
+            "package",
+            "party",
+            "pencil",
+            "phone",
+            "pin",
+            "plane",
+            "plus",
+            "rocket",
+            "scale",
+            "search",
+            "shield",
+            "shield-alert",
+            "shield-check",
+            "siren",
+            "skull",
+            "smile",
+            "snowflake",
+            "sparkles",
+            "star",
+            "sun",
+            "target",
+            "thermometer",
+            "thumbs-down",
+            "thumbs-up",
+            "timer",
+            "trending-down",
+            "trending-up",
+            "triangle-alert",
+            "trophy",
+            "truck",
+            "user",
+            "user-check",
+            "user-x",
+            "users",
+            "wallet",
+            "wifi",
+            "wrench",
+            "x",
+            "x-circle",
+            "zap"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label"
+      ]
+    }
+  }
+}

@@ -2,6 +2,7 @@ import {useLiveQuery} from 'dexie-react-hooks'
 import {MAX_NAME_CHARS} from '@/lib/decision/limits'
 import {DuplicateNameError, db, isConstraintError, nameKeyOf, type StoredDocument} from '@/lib/db'
 import type {Evaluation, Question, QuestionSet} from '@/lib/question-types'
+import type {ImportedConfig} from '@/lib/question-set-config'
 import type {QuestionSetTemplate} from '@/templates/types'
 
 export type QuestionSetDraft = Pick<
@@ -108,6 +109,20 @@ export async function cloneQuestionSet(source: QuestionSet): Promise<QuestionSet
     questions: cloneQuestions(source.questions),
     documentIds: [],
     requireDocuments: source.requireDocuments,
+    quickAccess: false
+  })
+  await setActiveSetId(id)
+  return (await db.questionSets.get(id))!
+}
+
+/** Creates a set from an imported configuration (fresh ids, free name), makes it active and returns it. */
+export async function importQuestionSet(config: ImportedConfig): Promise<QuestionSet> {
+  const id = await createQuestionSet({
+    name: await freeName(config.name),
+    context: config.context,
+    questions: cloneQuestions(config.questions),
+    documentIds: [],
+    requireDocuments: config.requireDocuments,
     quickAccess: false
   })
   await setActiveSetId(id)

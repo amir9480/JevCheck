@@ -33,7 +33,9 @@ import {EvaluationPanel}from '@/components/evaluation-panel'
 import {PageMarkdownDialog} from '@/components/page-markdown-dialog'
 import {QuestionSetPicker} from '@/components/question-set-picker'
 import {ConsentDialog} from '@/components/consent-dialog'
+import {ImportQuestionSetDialog} from '@/components/import-question-set-dialog'
 import {OnboardingDialog} from '@/components/onboarding-dialog'
+import {ShareQuestionSetDialog} from '@/components/share-question-set-dialog'
 import {SettingsDialog} from '@/components/settings-dialog'
 import {TemplatePickerDialog} from '@/components/template-picker-dialog'
 import {Button} from '@/components/ui/button'
@@ -67,6 +69,10 @@ export default function SidebarApp() {
   const {compact, toggle: toggleCompact} = useCompact()
   const [editing, setEditing] = useState<{set: QuestionSet; isNew: boolean} | null>(null)
   const [pickingTemplate, setPickingTemplate] = useState(false)
+  const [sharing, setSharing] = useState<QuestionSet | null>(null)
+  const [importing, setImporting] = useState(false)
+  // Onboarding ended with an import: the editor opens first, the provider settings after it.
+  const [settingsAfterEdit, setSettingsAfterEdit] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   // undefined while loading; the flag is set once onboarding is done or for installs with sets.
   const onboarded = useLiveQuery(async () => !!(await db.meta.get('onboarded')), [])
@@ -283,7 +289,7 @@ export default function SidebarApp() {
           <QuestionSetPicker
             {...questionSets}
             onNew={() => setPickingTemplate(true)}
-            onClone={(set) => void cloneQuestionSet(set).then((copy) => setEditing({set: copy, isNew: true}))}
+            onClone={setSharing}
             onEdit={(set) => setEditing({set, isNew: false})}
           />
           {questionSets.active && (
@@ -324,15 +330,43 @@ export default function SidebarApp() {
             setEditing({set, isNew: true})
           )
         }}
+        onImport={() => {
+          setPickingTemplate(false)
+          setImporting(true)
+        }}
+      />
+
+      <ImportQuestionSetDialog
+        open={importing}
+        onOpenChange={setImporting}
+        onImported={(set) => {
+          setImporting(false)
+          setEditing({set, isNew: true})
+        }}
+      />
+
+      <ShareQuestionSetDialog
+        set={sharing}
+        onOpenChange={(open) => !open && setSharing(null)}
+        onClone={(set) => {
+          setSharing(null)
+          void cloneQuestionSet(set).then((copy) => setEditing({set: copy, isNew: true}))
+        }}
       />
 
       {consented === false && <ConsentDialog />}
 
       {showOnboarding && (
         <OnboardingDialog
-          onFinished={() => {
+          onFinished={(imported) => {
             setOnboardingDone(true)
-            if (keys.isLoaded && keys.keys.length === 0) setSettingsOpen(true)
+            const needsKey = keys.isLoaded && keys.keys.length === 0
+            if (imported) {
+              setEditing({set: imported, isNew: true})
+              setSettingsAfterEdit(needsKey)
+            } else if (needsKey) {
+              setSettingsOpen(true)
+            }
           }}
         />
       )}
@@ -343,7 +377,13 @@ export default function SidebarApp() {
             key={editing.set.id}
             set={editing.set}
             isNew={editing.isNew}
-            onClose={() => setEditing(null)}
+            onClose={() => {
+              setEditing(null)
+              if (settingsAfterEdit) {
+                setSettingsAfterEdit(false)
+                setSettingsOpen(true)
+              }
+            }}
           />
         </Suspense>
       )}

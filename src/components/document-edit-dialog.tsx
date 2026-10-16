@@ -97,10 +97,10 @@ export function DocumentEditDialog({
       >
         <DialogHeader>
           <DialogTitle>Edit document</DialogTitle>
-          <DialogDescription className="truncate">{doc.sourceName}</DialogDescription>
+          <DialogDescription className="truncate">{doc.sourceName || 'Created from text'}</DialogDescription>
         </DialogHeader>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+        <div className="-mx-2 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-2 py-1">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="edit-doc-title">Title</Label>
             <Input

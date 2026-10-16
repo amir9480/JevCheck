@@ -27,7 +27,9 @@ export default defineManifest(({mode}) => {
     "optional_host_permissions": [
       "https://*/*",
       "http://*/*"
-    ]
+    ],
+    // Requested by "Paste from clipboard" in the import dialog.
+    "optional_permissions": ["clipboardRead"]
   }
   const permissions = ["activeTab", "scripting", "tabs", "contextMenus", "storage", "unlimitedStorage"]
 

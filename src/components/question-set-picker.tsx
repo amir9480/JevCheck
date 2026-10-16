@@ -36,8 +36,8 @@ export function QuestionSetPicker({
       <Button
         variant="outline"
         size="icon"
-        aria-label="Clone question set"
-        tooltip="Clone this question set"
+        aria-label="Share or clone question set"
+        tooltip="Share or clone this question set"
         disabled={!active}
         onClick={() => active && onClone(active)}
       >
