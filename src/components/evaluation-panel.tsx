@@ -11,7 +11,7 @@ import {budgetOf, estimateTokens, validateSet} from '@/lib/decision/limits'
 import {evaluateSet, findCachedEvaluation, hashPage} from '@/lib/evaluate-set'
 import type {PageMarkdown} from '@/lib/extract-page'
 import {failedPageChecks, type PageCheck} from '@/lib/page-checks'
-import {ensureOriginAccess} from '@/lib/origin-access'
+import {ensureOriginAccess, hasOriginAccess} from '@/lib/origin-access'
 import {
   deleteEvaluation,
   resolveSetDocuments,
@@ -171,7 +171,8 @@ export function EvaluationPanel({
           ? `Fix this set first: ${issues[0]}`
           : null
 
-  async function run(force: boolean) {
+  /** `gesture` is false for the auto-run, which cannot show a permission prompt. */
+  async function run(force: boolean, gesture = true) {
     if (!config || !page || isRunning || library === undefined || documentProblem) return
     abortRef.current?.abort()
     const controller = new AbortController()
@@ -179,8 +180,12 @@ export function EvaluationPanel({
     setIsRunning(true)
     setError(null)
     try {
-      // First await, so a permission prompt keeps the click's user gesture.
-      await ensureOriginAccess(config.baseUrl)
+      // First await, so a permission prompt keeps the click's user gesture. Without a gesture
+      // `permissions.request` throws, so the auto-run only checks the access granted with the key.
+      if (gesture) await ensureOriginAccess(config.baseUrl)
+      else if (!(await hasOriginAccess(config.baseUrl))) {
+        throw new Error(`Access to ${new URL(config.baseUrl).host} is needed to reach the provider. Click Evaluate to grant it.`)
+      }
       const outcome = await evaluateSet(config, {set, documents: included, page, force, signal: controller.signal})
       // Navigated or the page changed after the answer arrived: it is saved in history but not shown.
       if (!controller.signal.aborted) {
@@ -200,7 +205,7 @@ export function EvaluationPanel({
     // Keys load asynchronously; until then the hint wrongly says no key is set.
     if (!autoRun || library === undefined || !page || !keys.isLoaded) return
     onAutoRunHandled()
-    if (!hint && !isRunning) void run(false)
+    if (!hint && !isRunning) void run(false, false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRun, library, page, hint, keys.isLoaded])
 
