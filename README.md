@@ -19,6 +19,17 @@ Pick a question set, click **Evaluate**, and get clear, probability-backed answe
   <img src="src/images/screenshot.jpg" alt="Jev Check side panel evaluating a job posting with the Tech job template: fit, seniority, red flags and the stack the posting uses" width="900" />
 </p>
 
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/acobeddijnaokjkpkmcdfoepbmibpicc?utm_source=item-share-cb"><img src="docs/get-chrome.svg" alt="Download from the Chrome Web Store" height="56" /></a>
+  &nbsp;
+  <a href="https://addons.mozilla.org/en-US/firefox/addon/jev-check-ai-page-evaluator/"><img src="docs/get-firefox.svg" alt="Download from Firefox Add-ons" height="56" /></a>
+</p>
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/acobeddijnaokjkpkmcdfoepbmibpicc?utm_source=item-share-cb"><img src="https://img.shields.io/badge/Chrome%20Web%20Store-Install-4285F4?logo=googlechrome&logoColor=white" alt="Install from the Chrome Web Store" /></a>
+  <a href="https://addons.mozilla.org/en-US/firefox/addon/jev-check-ai-page-evaluator/"><img src="https://img.shields.io/badge/Firefox%20Add--ons-Install-FF7139?logo=firefoxbrowser&logoColor=white" alt="Install from Firefox Add-ons" /></a>
+</p>
+
 > **Jev Check is an independent project. It is not an official TypeSafe product.**
 
 ---
