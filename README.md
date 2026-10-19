@@ -10,7 +10,6 @@ Pick a question set, click **Evaluate**, and get clear, probability-backed answe
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-00f8ce)
-![Chromium](https://img.shields.io/badge/Chromium-only-informational)
 ![Bring your own key](https://img.shields.io/badge/BYOK-no%20servers-success)
 
 </div>
